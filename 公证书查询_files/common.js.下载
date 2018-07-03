@@ -1,0 +1,429 @@
+/**
+ * js全局方法
+ * 本文件是用于对js进行补充或屏蔽浏览器兼容性的
+ * 里面的所有方法都是全局性的，在其他js文件中会用到此文件中的方法
+ * 因此应该在引用其他js文件如：utils.js formatter.js 等之前引用此文件
+ * 
+ * @author duqingming@qq.com
+ * @date 2015年5月2日
+ */
+
+(function() {
+	var global = this, _toString = Object.prototype.toString, STRING_CLASS = '[object String]', dqm = {
+		common : {}
+	};
+
+	dqm.isString = function(object) {
+		return _toString.call(object) === STRING_CLASS;
+	},
+
+	dqm.isElement = function(object) {
+		return !!(object && object.nodeType == 1);
+	},
+
+	dqm.scope = function(chain) {
+		if (!chain || !dqm.isString(chain)) {
+			return global;
+		}
+		chain = chain.split('.');
+		var curParent = global;
+		for (var i = 0; i < chain.length; i++) {
+			if (curParent[chain[i]] !== undefined) {
+				curParent = curParent[chain[i]];
+				continue;
+			}
+			curParent = curParent[chain[i]] = {};
+		}
+		return curParent;
+	},
+
+	/**
+	 * oop util, inherit single Class
+	 */
+	dqm.inherit = function(subCtor, supCtor) {
+		if (typeof subCtor !== 'function' || typeof supCtor !== 'function')
+			return;
+
+		var tempCtor = function() {
+		};
+		tempCtor.prototype = supCtor.prototype;
+		subCtor.prototype = new tempCtor();
+		subCtor.prototype.constructor = subCtor;
+		subCtor.prototype._super_ = supCtor;
+	},
+
+	/**
+	 * oop util, inherit multi Interfaces
+	 */
+	dqm.implement = function(target) {
+		if (typeof target !== 'function')
+			return;
+		for (var i = 1, interface_; i < arguments.length; i++) {
+			interface_ = arguments[i];
+			if (typeof interface_ === 'object') {
+				$.extend(target.prototype, interface_);
+			}
+		}
+	},
+
+	/**
+	 * digital number format
+	 */
+	dqm.number_format = function(target) {
+		target.keyup(function() {
+			if (this.value != this.value.replace(/[^0-9\.]/g, '')) {
+				this.value = this.value.replace(/[^0-9\.]/g, '');
+			}
+		});
+	},
+	
+	/**
+	 * 取剩余时间数
+	 * 返回两个时间差的 x年x月x周x天x小时 的格式
+	 */
+	dqm.getLastDatetime = function(start_dt, end_dt) {
+		var t = '';
+		var time = end_dt - start_dt;
+		var mm = 1000 * 60; // 一分
+		var hh = mm * 10; // 一小时
+		var dd = hh * 24; // 一天
+		var week = dd * 7; // 一天
+		
+		if(time > week) {
+			t = parseInt(time / week) + '周';
+			time = time % week;
+		}
+		if(time > dd) {
+			t = parseInt(time / dd) + '天';
+			time = time % dd;
+		}
+		if(time > hh) {
+			t += parseInt(time / hh) + '小时';
+			time = time % mm;
+		}
+		if(time > mm) {
+			t += parseInt(time / mm) + '分钟';
+		}
+		return t;
+	}, 
+	
+	/**
+	 * 根据格式化字符串格式时间
+	 */
+	dqm.formatLongDatetime = function(time, fmt) {
+	    if(!time || time=='' || time==0) {
+	        return '';
+	    }
+	    if (fmt == null || fmt == "") {
+	        fmt = "yyyy-MM-dd HH:mm:ss";
+	    }
+	    var time = new Date(time).pattern(fmt); 
+	    return time; 
+	},
+	
+	/**
+	 * 对传入时间返回可读性较强的说明
+	 * 如：今天、2天前、3天前
+	 */
+	dqm.dateExplain = function(date) {
+		var start_dt = new Date(date);
+		var end_dt = new Date();
+		// 月份
+		var start_dt_month = start_dt.getMonth();
+		var end_dt_month = end_dt.getMonth();
+		// 年份
+		var start_dt_year = start_dt.getYear();
+		var end_dt_year = end_dt.getYear();
+		if(start_dt > end_dt) {
+			var time = start_dt.getTime() - end_dt.getTime();
+			var days = Math.floor(time/(24*3600*1000)) + 1;
+			if(days == 1) {
+				str = '明天';
+			} else {
+				str = days + '天后';
+			}
+		} else if(start_dt_year < end_dt_year) {
+			var year = end_dt_year-start_dt_year;
+			if(year == 1) {
+				str = '去年';
+			} else {
+				str = year+'年前';
+			}			
+		}  else if(start_dt_month < end_dt_month) {
+			var month = end_dt_month-start_dt_month;
+			if(month == 1) {
+				str = '上个月';
+			} else {
+				str = month+'年前';
+			}
+		} else {
+			// 取周数
+			var start_dt_week = dqm.getYearWeek(start_dt.pattern('yyyy-MM-dd'));
+			var end_dt_week = dqm.getYearWeek(end_dt.pattern('yyyy-MM-dd'));
+			if(start_dt_week < end_dt_week) {
+				var week = end_dt_week-start_dt_week;
+				if(week == 1) {
+					str = '上周';
+				} else {
+					str = week+'周前';
+				}				
+			} else {
+				var str = '';
+				var time = end_dt.getTime() - start_dt.getTime();
+				var days = Math.floor(time/(24*3600*1000))
+				if(days == 0) {
+					str = '今天';
+				} else if(days == 1) {
+					str = '昨天';
+				} else {
+					str = days + '天前';
+				}
+			}
+			
+		}
+		return str;
+	},
+	
+	/**
+	 * 取当前日期的字符串格式：yyyy-MM-dd
+	 */
+	dqm.getDate = function(date) {
+		var dd = new Date();
+		if(date) {
+			dd = date;
+		}
+		var y = dd.getFullYear();  
+	    var m = dd.getMonth()+1;//获取当前月份的日期  
+	    var d = dd.getDate();
+	    var str = y + '-' + m + '-' + d;
+	    return str;
+	},
+	
+	/**
+	 * 取当前月的第一天
+	 */
+	dqm.getMonthFirstDate = function(date) {
+		var dd = new Date();
+		if(date) {
+			dd = date;
+		}
+		var y = dd.getFullYear();  
+	    var m = dd.getMonth()+1;//获取当前月份的日期  
+	    var d = dd.getDate();
+	    var str = y + '-' + m + '-01';
+	    return str;
+	},
+	
+	/**
+	 * 取当前月的最后一天
+	 */
+	dqm.getMonthLastDate = function(date) {
+		var dd = new Date();
+		if(date) {
+			dd = date;
+		}
+		var y = dd.getFullYear();  
+	    var m = dd.getMonth()+1;//获取当前月份的日期  
+	    var day = new Date(y, m, 0);
+	    var str = y + '-' + m + '-' + day.getDate();
+	    return str;
+	},
+	
+	/**
+	 * 取传入日期是星期几
+	 */
+	dqm.getWeekDay = function(date) {
+		var show_day = new Array('星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六');
+		var day = date.getDay();
+		return show_day[day];
+	},
+	
+	/**
+	 * 取传入日期为当年中的第几周
+	 * dateString : yyyy-MM-dd
+	 */
+	dqm.getYearWeek = function(dateString){
+	    var da = dateString;//日期格式2015-12-30
+	    //当前日期
+	    var date1 = new Date(da.substring(0,4), parseInt(da.substring(5,7)) - 1, da.substring(8,10));
+	    //1月1号
+	    var date2 = new Date(da.substring(0,4), 0, 1);
+	    //获取1月1号星期（以周一为第一天，0周一~6周日）
+	    var dateWeekNum=date2.getDay()-1;
+	    if(dateWeekNum<0){dateWeekNum=6;}
+	    if(dateWeekNum<4){
+	        //前移日期
+	        date2.setDate(date2.getDate()-dateWeekNum);
+	    }else{
+	        //后移日期
+	        date2.setDate(date2.getDate()+7-dateWeekNum);
+	    }
+	    var d = Math.round((date1.valueOf() - date2.valueOf()) / 86400000);
+		var str = '';
+	    if(d<0){
+	        var date3 = (date1.getFullYear()-1)+"-12-31";
+	        str = getYearWeek(date3);
+	    }else{
+	        //得到年数周数
+	        var year=date1.getFullYear();
+	        var week=Math.ceil((d+1 )/ 7);
+	        str = week;
+	    }
+		return str;
+	}
+	
+	
+	
+	;
+
+	/**
+	 * expose
+	 */
+	global.dqm = dqm;
+
+})();
+dqm.scope('dqm.common');
+
+
+
+/**
+ * 字符串匹配验证，开始位置匹配
+ * 
+ * @param s
+ * @returns {Boolean}
+ */
+String.prototype.startWith = function(s) {
+	if (s == null || s == "" || this.length == 0 || s.length > this.length)
+		return false;
+	if (this.substr(0, s.length) == s)
+		return true;
+	else
+		return false;
+	return true;
+}
+/**
+ * 字符串匹配验证，结束位置匹配
+ */
+String.prototype.endWith = function(s) {
+	if (s == null || s == "" || this.length == 0 || s.length > this.length)
+		return false;
+	if (this.substring(this.length - s.length) == s)
+		return true;
+	else
+		return false;
+	return true;
+}
+
+/**
+ * 删除的空格
+ */
+String.prototype.trim = function() {
+	return this.replace(/(^\s*)|(^\t*)|(\s*$)|(\t*$)/g, "");
+	
+}
+
+/**
+ * 定义一个Map对象
+ */
+function Map() {
+	this.container = new Object();
+}
+// 对map进行压入操作
+Map.prototype.put = function(key, value) {
+	this.container[key] = value;
+}
+// 根据key从Map中取值
+Map.prototype.get = function(key) {
+	return this.container[key];
+}
+// 取map的所有健集合
+Map.prototype.keySet = function() {
+	var keyset = new Array();
+	var count = 0;
+	for ( var key in this.container) {
+		// 跳过object的extend函数
+		if (key == 'extend') {
+			continue;
+		}
+		keyset[count] = key;
+		count++;
+	}
+	return keyset;
+}
+// 取map的大小
+Map.prototype.size = function() {
+	var count = 0;
+	for ( var key in this.container) {
+		// 跳过object的extend函数
+		if (key == 'extend') {
+			continue;
+		}
+		count++;
+	}
+	return count;
+}
+// 删除值
+Map.prototype.remove = function(key) {
+	delete this.container[key];
+}
+// 将map转成字符串
+Map.prototype.toString = function() {
+	var str = "";
+	for (var i = 0, keys = this.keySet(), len = keys.length; i < len; i++) {
+		str = str + keys[i] + "=" + this.container[keys[i]] + ";\n";
+	}
+	return str;
+}
+
+
+/**
+ * 对Date的扩展，将 Date 转化为指定格式的String 月(M)、日(d)、12小时(h)、24小时(H)、分(m)、秒(s)、周(E)、季度(q)
+ * 可以用 1-2 个占位符 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) eg: 
+ * (new Date()).pattern("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423 
+ * (new Date()).pattern("yyyy-MM-dd E HH:mm:ss") ==> 2009-03-10 二 20:09:04 
+ * (new Date()).pattern("yyyy-MM-dd EE hh:mm:ss") ==> 2009-03-10 周二 08:09:04 
+ * (new Date()).pattern("yyyy-MM-dd EEE hh:mm:ss") ==> 2009-03-10 星期二 08:09:04 
+ * (new Date()).pattern("yyyy-M-d h:m:s.S") ==> 2006-7-2 8:9:4.18
+ */
+Date.prototype.pattern = function(fmt) {
+	var o = {
+		"M+" : this.getMonth() + 1, // 月份
+		"d+" : this.getDate(), // 日
+		"h+" : this.getHours() % 12 == 0 ? 12 : this.getHours() % 12, // 小时
+		"H+" : this.getHours(), // 小时
+		"m+" : this.getMinutes(), // 分
+		"s+" : this.getSeconds(), // 秒
+		"q+" : Math.floor((this.getMonth() + 3) / 3), // 季度
+		"S" : this.getMilliseconds() // 毫秒
+	};
+	var week = {
+		"0" : "/u65e5",
+		"1" : "/u4e00",
+		"2" : "/u4e8c",
+		"3" : "/u4e09",
+		"4" : "/u56db",
+		"5" : "/u4e94",
+		"6" : "/u516d"
+	};
+	if (/(y+)/.test(fmt)) {
+		fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+	}
+	if (/(E+)/.test(fmt)) {
+		fmt = fmt.replace(RegExp.$1, ((RegExp.$1.length > 1) ? (RegExp.$1.length > 2 ? "/u661f/u671f" : "/u5468") : "") + week[this.getDay() + ""]);
+	}
+	for ( var k in o) {
+		if (new RegExp("(" + k + ")").test(fmt)) {
+			fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+		}
+	}
+	// 如果时间格式为12小时制，且格式字符串中' a'的情况下将，将' a'替换成 ' AM'' PM'或者 ' PM'
+	if(fmt.indexOf(' a')>-1 || fmt.indexOf(' A')>-1 ) {
+		if(this.getHours() > 12) {
+			fmt = fmt.replace(' A', ' PM').replace(' a', ' PM');
+		} else {
+			fmt = fmt.replace(' A', ' AM').replace(' a', ' AM');
+		}
+	}
+	
+	return fmt;
+};

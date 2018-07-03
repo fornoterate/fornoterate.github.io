@@ -1,0 +1,491 @@
+/**
+ * utils
+ * JS工具方法
+ * 
+ * 		utils.alert(msg, callback)		消息提示
+ * 		utils.alert_warn(msg, callback)	警告信息提示
+ * 		utils.alert_error(msg, callback)	错误/异常信息提示
+ * 
+ * 		utils.progress()					显示进度条
+ * 		utils.progress('close')				关闭进度条
+ * 
+ * 		utils.formatLongDate (time, format)	格式化时间
+ * 
+ * 		utils.initDistrictData (id, uid)	初始化行政区域下拉列表
+ * 
+ * 		utils.getValues (form_id)			取form的属性值
+ * 
+ * 		utils.printObj(obj, notShowNull)	打印js对象
+ * 
+ * 		utils.parseCapital(price)			将价格转换为大写
+ * 
+ * 		utils.amount_in_words (price)		将小写数字金额转换为大写形式
+ * 
+ * 		utils.to_upper(a)					将小写数字转换成大小的
+ * 
+ * 		utils.bankerRound (num)				四舍六入五成双
+ * 
+ * 		utils.uuid ()  						返回uuid,长度32位
+
+ * @author dqm
+ * @date 2015年5月2日 11:15:33
+ */
+
+(function($) {
+	var utils = dqm.scope('utils');
+	$.extend(utils, {
+		
+		/**
+		 * message alert
+		 * 
+		 * @param {string}
+		 *            msg
+		 */
+		alert : function(msg, callback, type) {
+			var _type = 'primary';
+			if(type) {
+				_type = type;
+			}
+			// text-green success; text-aqua info; text-light-blue info; text-red danger; text-yellow warning; text-muted general
+			var text_class = ''; 
+			if('danger' == _type) {
+				text_class = 'text-red'; 
+			} else if('warning' == _type) {
+				text_class = 'text-yellow'; 
+			} else if('success' == _type) {
+				text_class = 'text-green'; 
+			} else if('info' == _type) {
+				text_class = 'text-light-blue'; 
+			} else if('general' == _type) {
+				text_class = 'text-muted'; 
+			}
+			
+			var utils_alert = document.getElementById("utils_alert");
+			if(utils_alert == null) {
+				_alert = '<div class="modal fade in" id="utils_alert" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: display; padding-right: 0px;">';
+				_alert += '<div class="modal-dialog" style="border:1px solid #337ab7; border-radius:10px; width:500px;">';
+				
+				_alert += '<table style="width:100%; border-radius:10px;">';
+				_alert += '<tr><td style="border-radius: 10px 10px 0 0; height:40px; background-color:#337ab7; color:#fff; padding-left:10px; font-weight:bolder; font-size:18px">&nbsp;提示</td></tr>';
+				_alert += '<tr><td style="padding:10px; background-color:#eee">'+ msg +'</td></tr>';
+				_alert += '<tr><td style="border-radius: 0 0 10px 10px;background-color:#ddd; height:60px; text-align:right; padding-right:10px;"><button type="button" class="btn btn-primary" onclick="utils.alert_close()"> 确定 </button></td></tr>';
+				_alert += '<table>';
+				
+				_alert += '</div>';
+				_alert += '</div>';
+				$('body').append(_alert);
+			}
+			$('#utils_alert').show();
+			
+
+			//alert(msg);
+			if(callback && (callback  instanceof Function)) {
+	              callback();//回调
+	        }
+		},
+
+		/**
+		 * message alert
+		 * 
+		 * @param {string}
+		 *            msg
+		 */
+		alert_warn : function(msg, callback) {
+			// danger warning
+			utils.alert(msg, callback, 'warning');
+		},
+		/**
+		 * message alert
+		 * 
+		 * @param {string}
+		 *            msg
+		 */
+		alert_error : function(msg, callback) {
+			// danger warning
+			utils.alert(msg, callback, 'danger');
+		},
+		// 关闭错误提示窗口
+		alert_close : function() {
+			$(".dqm-alert-fade").remove();
+			$('#utils_alert').hide();
+		},
+		
+		/**
+		 * 确认弹出提示框
+		 */
+		confirm: function(msg, callback) {
+			if(confirm(msg)) {
+				return false;
+			} else {
+				if(callback && (callback  instanceof Function)) {
+		              callback(); //回调
+		        }
+			}
+		},
+		
+		/**
+		 * 进度条
+		 */
+		progress : function(opt) {
+			var utils_progress = document.getElementById("home_loading");
+			if(utils_progress == null) {
+				progress = '<div class="modal fade in" id="home_loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: display; padding-right: 0px;">';
+				progress += '<div class="modal-dialog" style="text-align:center; width:500px; height:50px">';
+				progress += '&nbsp;&nbsp;<img src="'+ resPath +'/imgs/loading.gif" /> 正在加载,请稍后...';
+				progress += '</div>';
+				progress += '</div>';
+				$('body').append(progress);
+			}
+			if(opt && opt=='close') {
+				$('#home_loading').hide();
+			} else {
+				$('#home_loading').show();
+			}
+		},
+		
+		/**
+		 * 格式化长整型时间类型
+		 * format：yyyy-MM-dd hh:mm:ss
+		 */
+		formatLongDate : function (time, format) {
+		    if(!time || time=='' || time==0) {
+		        return '';
+		    }
+		    if (format == null || format == "") {
+		        format = "yyyy-MM-dd HH:mm:ss";
+		    }
+		    var time = new Date(time).pattern(format); 
+		    return time; 
+		},
+		
+		/**
+		 * @param url [basePath + "/common/get_district_data.htm",加载元素Id]
+		 * @param id 上级select的id值
+		 * @param sub_id 下级select的id值
+		 * @returns
+		 */
+		initDistrictData : function (id, uid) {
+			var url = basePath + "/common/get_district_data.htm";
+			$.ajax({
+				url : url,
+				type : "post",
+				data : {pid : id, _t : (new Date()).getTime()},   // 'pid=' + id + "&_t=" + (new Date()).getTime(),
+				dataType : "json",
+				async : false,
+				success : function(responseText, textStatus) {
+					if(responseText.length > 0) {
+						var list = eval("(" + responseText + ")");
+						var html = "";
+						for(var i in list) {
+							html += "<option value='"+list[i].id+"'>"+list[i].dname+"</option>";
+						}
+						$("#"+uid+"").append(html);
+					}
+				}
+			});
+		},
+		
+		/**
+		 * 将form中的属性打包成json格式
+		 * @param form_id
+		 */
+		getValues : function (form_id) {
+			var json = "";
+			var ar = $("#"+form_id).serializeArray(); //alert(ar.length);
+			for(var i=0; i<ar.length; i++) {
+				if(ar[i].value != null &&  ar[i].value != "") {
+					if(json != "") {
+						json += ",";
+					}
+					json += "'" + ar[i].name + "' : '" + ar[i].value.replace(/\r\n/ig,"<br/>")  + "'";
+				}
+			}
+			json = "({" +json+ "})";
+			return  eval(json);
+		},
+		
+		/**
+		 * 打印 object 对象内容
+		 */
+		printObj : function(obj, notShowNull) {
+			var s = "";
+			for ( var property in obj) {
+				if (notShowNull) {
+					if (!obj[property]) {
+						continue;
+					}
+				}
+				if (obj[property] != null)
+					s = s + "\n " + property + ": " + obj[property];
+			}
+			alert(s);
+		},
+		
+		/**
+		 * 将价格转换为大写
+		 * 
+		 * @param price
+		 */
+		parseCapital : function(price) {
+			if (isNaN(price)) {
+				return "NaN";
+			} else {
+				return creat(price);
+			}
+		},
+
+
+		/**
+		 * 将小写数字金额转换为大写形式
+		 * 
+		 * @param price
+		 *            要转换的小写金额
+		 * @returns {String}
+		 */
+		amount_in_words : function (price) {
+			var money1 = new Number(price);
+			if (money1 > 1000000000000000000) {
+				return "数字太大";
+			}
+			var monee = Math.round(money1 * 100).toString(10)
+			var i, j;
+			j = 0;
+			var leng = monee.length;
+			var monval = "";
+			for (i = 0; i < leng; i++) {
+				monval = monval + to_upper(monee.charAt(i)) + to_mon(leng - i - 1);
+			}
+			return repace_acc(monval);
+		},
+		
+		/**
+		 * 将小写数字转换成大小的
+		 * 
+		 * @param a
+		 * @returns {String}
+		 */
+		to_upper : function(a) {
+			switch (a) {
+			case '0':
+				return '零';
+				break;
+			case '1':
+				return '壹';
+				break;
+			case '2':
+				return '贰';
+				break;
+			case '3':
+				return '叁';
+				break;
+			case '4':
+				return '肆';
+				break;
+			case '5':
+				return '伍';
+				break;
+			case '6':
+				return '陆';
+				break;
+			case '7':
+				return '柒';
+				break;
+			case '8':
+				return '捌';
+				break;
+			case '9':
+				return '玖';
+				break;
+			default:
+				return '';
+			}
+		},
+		
+		/**
+		 * 取货币单位
+		 * 
+		 * @param a
+		 * @returns {String}
+		 */
+		to_mon : function (a) {
+			if (a > 10) {
+				a = a - 8;
+				return (to_mon(a));
+			}
+			switch (a) {
+			case 0:
+				return '分';
+				break;
+			case 1:
+				return '角';
+				break;
+			case 2:
+				return '元';
+				break;
+			case 3:
+				return '拾';
+				break;
+			case 4:
+				return '佰';
+				break;
+			case 5:
+				return '仟';
+				break;
+			case 6:
+				return '万';
+				break;
+			case 7:
+				return '拾';
+				break;
+			case 8:
+				return '佰';
+				break;
+			case 9:
+				return '仟';
+				break;
+			case 10:
+				return '亿';
+				break;
+			}
+		},
+		
+		/**
+		 * 处理转换的价格的特殊情况
+		 * 
+		 * @param Money
+		 * @returns {String}
+		 */
+		repace_acc : function (Money) {
+			Money = Money.replace("零分", "");
+			Money = Money.replace("零角", "零");
+			var yy;
+			var outmoney;
+			outmoney = Money;
+			yy = 0;
+			while (true) {
+				var lett = outmoney.length;
+				outmoney = outmoney.replace("零元", "元");
+				outmoney = outmoney.replace("零万", "万");
+				outmoney = outmoney.replace("零亿", "亿");
+				outmoney = outmoney.replace("零仟", "零");
+				outmoney = outmoney.replace("零佰", "零");
+				outmoney = outmoney.replace("零零", "零");
+				outmoney = outmoney.replace("零拾", "零");
+				outmoney = outmoney.replace("亿万", "亿零");
+				outmoney = outmoney.replace("万仟", "万零");
+				outmoney = outmoney.replace("仟佰", "仟零");
+				yy = outmoney.length;
+				if (yy == lett)
+					break;
+			}
+			yy = outmoney.length;
+			if (outmoney.charAt(yy - 1) == '零') {
+				outmoney = outmoney.substring(0, yy - 1);
+			}
+			yy = outmoney.length;
+			if (outmoney.charAt(yy - 1) == '元') {
+				outmoney = outmoney + '整';
+			}
+			return outmoney;
+		},
+
+		/**
+		 * 四舍六入五成双 对于位数很多的近似数，当有效位数确定后，其后面多余的数字应该舍去，只保留有效数字最末一位，这种修约（舍入）规则是“四舍六入五成双”，
+		 * 也即“4舍6入5凑偶”这里“四”是指≤4 时舍去，"六"是指≥6时进上，"五"指的是根据5后面的数字来定，当5后有数时，舍5入1；
+		 * 当5后无有效数字时，需要分两种情况来讲：①5前为奇数，舍5入1；②5前为偶数，舍5不进。（0是偶数）
+		 * 
+		 * @param double
+		 */
+		bankerRound : function (num) {
+			if (num == undefined) {
+				return '-';
+			}
+			var dou = parseFloat(num);
+			if (isNaN(dou)) {
+				return 0.00;
+			}
+			var index = String(num).indexOf('.');
+			if (index < 0) {
+				return num + '.00';
+			} else {
+				// 整数部分
+				var inte = String(num).substring(0, index);
+				// 取数字的小数部分
+				var deci = String(num).substring(index + 1);
+				// alert(num + "：" + deci);
+				if (deci.length == 0) {
+					return inte + '.00';
+				} else if (deci.length == 1) {
+					return inte + '.' + deci + '0';
+				} else if (deci.length == 2) {
+					return inte + '.' + deci;
+				} else {
+					var deci_t = 0;
+					var n = parseInt(deci.substring(2, 3));
+					if (n <= 4) {
+						deci_t = parseInt(deci.substring(0, 2));
+					} else if (n >= 6) {
+						deci_t = parseInt(deci.substring(0, 2)) + 1;
+					} else {
+						// 当5后有数时，舍5入1；
+						// 当5后无有效数字时，需要分两种情况来讲：①5前为奇数，舍5入1；②5前为偶数，舍5不进。
+						if (deci.length > 2) {
+							deci_t = parseInt(deci.substring(0, 2)) + 1;
+						} else {
+							if (parseInt(deci.substring(0, 1)) % 2 == 0) {
+								deci_t = parseInt(deci.substring(0, 2));
+							} else {
+								deci_t = parseInt(deci.substring(0, 2)) + 1;
+							}
+						}
+					}
+					if (deci_t > 99) {
+						if (parseInt(inte) >= 0) {
+							dou = String(parseInt(inte) + 1) + '.00';
+						} else {
+							dou = String(parseInt(inte) - 1) + '.00';
+						}
+					} else if (deci_t < 10) {
+						dou = String(inte) + '.0' + String(deci_t);
+					} else {
+						dou = String(inte) + '.' + String(deci_t);
+					}
+				}
+				return dou;
+			}
+		},
+		
+		/**
+		 * 返回uuid,长度32位
+		 */
+		uuid : function () {
+			var len = 32;
+			var radix = 16;
+			// Private array of chars to use
+			var CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+		    var chars = CHARS, uuid = [], i;
+		    radix = radix || chars.length;		 
+		    if (len) {
+		      // Compact form
+		      for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random()*radix];
+		    } else {
+		      // rfc4122, version 4 form
+		      var r;		 
+		      // rfc4122 requires these characters
+		      uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+		      uuid[14] = '4';		 
+		      // Fill in random data.  At i==19 set the high bits of clock sequence as
+		      // per rfc4122, sec. 4.1.5
+		      for (i = 0; i < 36; i++) {
+		        if (!uuid[i]) {
+		          r = 0 | Math.random()*16;
+		          uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+		        }
+		      }
+		    }		 
+		    return uuid.join('');
+		  }
+		
+		// ========== 添加方法结束
+	});
+})(jQuery);
