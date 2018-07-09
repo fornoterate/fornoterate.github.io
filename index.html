@@ -4,6 +4,7 @@
 	<meta name="robots" content="noindex,nofollow">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta content="telephone=no" name="format-detection">
 <title>公证书查询</title>
@@ -151,23 +152,50 @@
 	    		return false;
 	    	}
 				if($('#key2').val() == '徐懿彬') {
-	    		window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
-					return true;
+					if($('#key1').val()=="(2018)榕公证字第18593号")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)Rong Zi,No.18593")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)榕公证字第18597号")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818597.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)Rong Zi,No.18597")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818597.pdf";
+						return true;
+					}
 	    	}
 				else if($('#key2').val() == 'Xu Yibin') {
-	    		window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
-					return true;
+					if($('#key1').val()=="(2018)榕公证字第18593号")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)Rong Zi,No.18593")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)榕公证字第18597号")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818597.pdf";
+						return true;
+					}
+					else if($('#key1').val()=="(2018)Rong Zi,No.18597")
+					{
+						window.location.href = "http://check.FZDNGZC.INFO/get_1/201818597.pdf";
+						return true;
+					}
 	    	}
-				else if($('#key1').val()=="(2018)榕公证字第18593号")
-				{
-					window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
-					return true;
-				}
-				else if($('#key1').val()=="(2018)Rong Zi,No.18593")
-				{
-					window.location.href = "http://check.FZDNGZC.INFO/get_1/201818593.pdf";
-					return true;
-				}
+				else
 				 		utils.alert_warn('无信息，请查证后再试。');
 				return false;
 	});}
